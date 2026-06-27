@@ -89,7 +89,7 @@
         .catch(err => {
             statusDiv.innerText = "[-] ERROR: CORS Policy blocked the access.";
             statusDiv.className = "status error";
-            outputDiv.innerText = err.toString() + "\n\nNote: This means the server did not reflect the Origin: https://stelemane.github.io";
+            outputDiv.innerText = err.toString() + "\n\nNote: This means the server did not reflect the Origin: https://stelemane.github.io/poc/";
             console.error(err);
         });
     };
